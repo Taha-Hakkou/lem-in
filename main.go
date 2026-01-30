@@ -3,8 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"regexp"
-	"strconv"
 	"strings"
 )
 
@@ -30,7 +28,7 @@ import (
 // The coordinates of the rooms will always be int.
 
 func main() {
-	if len(os.Args) != 2 {
+	if len(os.Args) != 2 || len(os.Args[1]) <= 4 || !strings.HasSuffix(os.Args[1], ".txt") {
 		fmt.Println("Usage: ./lem-in [FILE]")
 		return
 	}
@@ -38,29 +36,8 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 	}
+	bytes = []byte(strings.ReplaceAll(string(bytes), "\r\n", "\n"))
 	lines := strings.Split(string(bytes), "\n")
+	fmt.Println(Parse(lines))
 
-	// Number of ants
-	n, _ := strconv.Atoi(lines[0]) // check error
-
-	// recheck regex: surrounding spaces
-	roomex := regexp.MustCompile(`([A-Za-z0-9]+) ([0-9]+) ([0-9]+)`)
-	tunlex := regexp.MustCompile(`([A-Za-z0-9]+)-([A-Za-z0-9]+)`)
-	for i := 1; i < len(lines); i++ {
-		if roomex.MatchString(lines[i]) { // contains and not match
-
-		}
-	}
-
-	// Output
-	fmt.Println(n)
-	showRooms()
-	showLinks()
-	fmt.Println()
-	showMoves()
-}
-
-type Room struct {
-	name string
-	x, y int
 }
