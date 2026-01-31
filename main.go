@@ -35,9 +35,10 @@ func main() {
 	bytes, err := os.ReadFile(os.Args[1])
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 	bytes = []byte(strings.ReplaceAll(string(bytes), "\r\n", "\n"))
 	lines := strings.Split(string(bytes), "\n")
-	fmt.Println(Parse(lines))
+	PrintParsedData(lines)
 
 }
