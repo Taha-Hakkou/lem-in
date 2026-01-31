@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func Parse(lines []string) (int, []Room, []Link, error) {
+func Parse(lines []string) (int, []*Room, []Link, error) {
 	if len(lines) == 0 {
 		return 0, nil, nil, fmt.Errorf("ERROR: invalid data format")
 	}
@@ -127,11 +127,15 @@ func Parse(lines []string) (int, []Room, []Link, error) {
 		}
 
 	}
+	var parsedRooms []*Room
+	for i := range Rooms {
+		parsedRooms = append(parsedRooms, &Rooms[i])
+	}
 	var Links []Link
 	for _, l := range Checking {
 		splited := strings.Split(l, "-")
-		Links = append(Links, Link{R1: FindRoom(Rooms, splited[0]), R2: FindRoom(Rooms, splited[1])})
+		Links = append(Links, Link{R1: FindRoom(parsedRooms, splited[0]), R2: FindRoom(parsedRooms, splited[1])})
 	}
 
-	return Ants, Rooms, Links, nil
+	return Ants, parsedRooms, Links, nil
 }
