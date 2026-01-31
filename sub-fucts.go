@@ -32,6 +32,7 @@ func PrintParsedData(lines []string) {
 		fmt.Println(err)
 		return
 	}
+	Rooms = GetRelatedRooms(Rooms, Links)
 	fmt.Println("Number of Ants :", Ants)
 	fmt.Println()
 
@@ -42,5 +43,10 @@ func PrintParsedData(lines []string) {
 
 	for _, l := range Links {
 		fmt.Println(l.PrintLinks())
+	}
+	fmt.Println()
+
+	for _, r := range Rooms {
+		fmt.Printf("Room %s -> %s\n", r.Name, r.PrintRelations())
 	}
 }
