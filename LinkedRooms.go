@@ -16,6 +16,7 @@ func GetRelatedRooms(Rooms []*Room, Links []Link) {
 func FindPath(Rooms []*Room) bool {
 	var Queue []*Room
 	var start *Room
+
 	for i := range Rooms {
 		if Rooms[i].Role == "start" {
 			start = Rooms[i]
@@ -30,48 +31,78 @@ func FindPath(Rooms []*Room) bool {
 	}
 
 	Queue = append(Queue, start)
+	pathFound := false
 
 	for len(Queue) > 0 {
-		Curent := Queue[0]
+		current := Queue[0]
 		Queue = Queue[1:]
-		for i := range Curent.Relations {
-			curentTemp := Curent.Relations[i]
-			if curentTemp.IsVisited {
-				continue
+
+		for _, neighbor := range current.Relations {
+			if !neighbor.IsVisited {
+				neighbor.IsVisited = true
+				neighbor.Parent = append(neighbor.Parent, current)
+				neighbor.Steps = current.Steps + 1
+				Queue = append(Queue, neighbor)
+
+				if neighbor.Role == "end" {
+					pathFound = true
+				}
+			} else if neighbor.Steps == current.Steps+1 {
+				alreadyHas := false
+				for _, p := range neighbor.Parent {
+					if p.Name == current.Name {
+						alreadyHas = true
+						break
+					}
+				}
+				if !alreadyHas {
+					neighbor.Parent = append(neighbor.Parent, current)
+				}
 			}
-			curentTemp.IsVisited = true
-			curentTemp.Parent = Curent
-			curentTemp.Steps = Curent.Steps + 1
-			if curentTemp.Role == "end" {
-				return true // Path found
-			}
-			Queue = append(Queue, curentTemp)
 		}
 	}
-	return false 
+
+	return pathFound
 }
 
-func ExtractPaths(Rooms []*Room) []*Room {
-	var End *Room
-	var Path []*Room
+func ExtractAllPaths(Rooms []*Room) [][]*Room {
+	var end *Room
+
+	// Trouver la salle de fin
 	for i := range Rooms {
 		if Rooms[i].Role == "end" {
-			End = Rooms[i]
+			end = Rooms[i]
 			break
 		}
 	}
 
-	if End == nil || End.Parent == nil {
+	if end == nil || len(end.Parent) == 0 {
 		return nil
 	}
 
-	Path = append(Path, End)
-	current := End
+	// Récupérer tous les chemins avec backtracking récursif
+	var allPaths [][]*Room
+	var currentPath []*Room
+	findAllPathsRecursive(end, currentPath, &allPaths)
 
-	for current.Parent != nil {
-		Path = append(Path, current.Parent)
-		current = current.Parent
+	return allPaths
+}
+
+func findAllPathsRecursive(room *Room, currentPath []*Room, allPaths *[][]*Room) {
+	// Ajouter la salle actuelle au chemin
+	currentPath = append([]*Room{room}, currentPath...)
+
+	// Si on arrive au start, on a trouvé un chemin complet
+	if room.Role == "start" {
+		// Copier le chemin pour éviter les modifications
+		pathCopy := make([]*Room, len(currentPath))
+		copy(pathCopy, currentPath)
+		*allPaths = append(*allPaths, pathCopy)
+		return
 	}
 
-	return Path
+	// Explorer tous les parents
+	for _, parent := range room.Parent {
+		findAllPathsRecursive(parent, currentPath, allPaths)
+	}
 }

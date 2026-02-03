@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 func checkRepRooms(sl []Room, s string) bool {
 	for _, r := range sl {
@@ -10,6 +13,7 @@ func checkRepRooms(sl []Room, s string) bool {
 	}
 	return true
 }
+
 func checkRepLinks(sl []string, s string) bool {
 	for _, r := range sl {
 		if r == s {
@@ -18,6 +22,7 @@ func checkRepLinks(sl []string, s string) bool {
 	}
 	return true
 }
+
 func FindRoom(rooms []*Room, name string) *Room {
 	for i := range rooms {
 		if rooms[i].Name == name {
@@ -26,12 +31,14 @@ func FindRoom(rooms []*Room, name string) *Room {
 	}
 	return nil
 }
+
 func PrintParsedData(lines []string) {
 	Ants, Rooms, Links, err := Parse(lines)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
+
 	GetRelatedRooms(Rooms, Links)
 	pathFound := FindPath(Rooms)
 
@@ -40,7 +47,7 @@ func PrintParsedData(lines []string) {
 		return
 	}
 
-	fmt.Println("Number of Ants :", Ants)
+	fmt.Println("Number of Ants:", Ants)
 	fmt.Println()
 
 	for _, r := range Rooms {
@@ -53,26 +60,36 @@ func PrintParsedData(lines []string) {
 	}
 	fmt.Println()
 
+	// Afficher les informations de chaque salle
 	for _, r := range Rooms {
-		parentName := "nil"
-		if r.Parent != nil {
-			parentName = r.Parent.Name
+		parentNames := "nil"
+		if len(r.Parent) > 0 {
+			names := []string{}
+			for _, p := range r.Parent {
+				names = append(names, p.Name)
+			}
+			parentNames = strings.Join(names, ", ")
 		}
-		fmt.Printf("Room %s -> parent name: %s -> steps: %d\n", r.Name, parentName, r.Steps)
+		fmt.Printf("Room %s -> parents: [%s] -> steps: %d\n", r.Name, parentNames, r.Steps)
 	}
 	fmt.Println()
 
-	Path := ExtractPaths(Rooms)
-	if Path == nil {
+	// Extraire et afficher tous les chemins
+	allPaths := ExtractAllPaths(Rooms)
+	if allPaths == nil {
 		fmt.Println("ERROR: no path found")
 		return
 	}
 
-	for i := len(Path) - 1; i >= 0; i-- {
-		fmt.Print(Path[i].Name)
-		if i != 0 {
-			fmt.Print(" -> ")
+	fmt.Printf("Found %d path(s):\n", len(allPaths))
+	for i, path := range allPaths {
+		fmt.Printf("Path %d: ", i+1)
+		for j, room := range path {
+			fmt.Print(room.Name)
+			if j < len(path)-1 {
+				fmt.Print(" -> ")
+			}
 		}
+		fmt.Printf(" (length: %d)\n", len(path)-1)
 	}
-	fmt.Println()
 }

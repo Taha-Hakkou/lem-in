@@ -13,7 +13,7 @@ type Room struct {
 
 	IsVisited bool
 	Steps     int
-	Parent    *Room
+	Parent    []*Room
 }
 
 func (r *Room) PrintRooms() string {
