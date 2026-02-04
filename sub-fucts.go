@@ -75,4 +75,5 @@ func PrintParsedData(lines []string) {
 		}
 		fmt.Printf(" (length: %d)\n", len(path)-1)
 	}
+	MoveAnts(allPaths ,Ants)
 }

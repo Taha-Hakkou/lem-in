@@ -1,5 +1,10 @@
 package main
 
+import (
+	"fmt"
+	"strings"
+)
+
 func GetRelatedRooms(Rooms []*Room, Links []Link) {
 	for i := range Rooms {
 		for _, l := range Links {
@@ -78,12 +83,32 @@ func MoveAnts(Paths [][]*Room, NAnts int) {
 		Ants = append(Ants, a)
 		j++
 	}
-	end := 0
-	for end != NAnts {
+	finished := 0
+
+	for finished < NAnts {
+		var line []string
+
 		for i := range Ants {
-			Ant := Ants[i]
-			Ant.Pos++
-			//Ant
+			ant := &Ants[i]
+
+			if ant.Pos >= len(ant.Path)-1 {
+				continue
+			}
+
+			nextRoom := ant.Path[ant.Pos+1]
+
+			ant.Pos++
+			line = append(line,
+				fmt.Sprintf("L%d-%s", ant.Number, nextRoom.Name),
+			)
+
+			if nextRoom.Role == "end" {
+				finished++
+			}
+		}
+
+		if len(line) > 0 {
+			fmt.Println(strings.Join(line, " "))
 		}
 	}
 }
