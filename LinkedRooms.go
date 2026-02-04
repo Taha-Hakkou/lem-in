@@ -58,3 +58,32 @@ func FindAllPaths(Rooms []*Room) [][]*Room {
 	DFS(start)
 	return paths
 }
+
+func MoveAnts(Paths [][]*Room, NAnts int) {
+	for i := 0; i < len(Paths)-1; i++ {
+		for j := 0; j < len(Paths)-i-1; j++ {
+			if len(Paths[j]) > len(Paths[j+1]) {
+				Paths[j], Paths[j+1] = Paths[j+1], Paths[j]
+			}
+		}
+	}
+
+	var Ants []Ant
+	j := 0
+	for i := 0; i < NAnts; i++ {
+		if j == len(Paths) {
+			j = 0
+		}
+		a := Ant{Number: i, Pos: 0, Path: Paths[j]}
+		Ants = append(Ants, a)
+		j++
+	}
+	end := 0
+	for end != NAnts {
+		for i := range Ants {
+			Ant := Ants[i]
+			Ant.Pos++
+			//Ant
+		}
+	}
+}

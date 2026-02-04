@@ -10,13 +10,18 @@ type Room struct {
 	Y         int
 	Role      string // "start", "end", "normal"
 	Relations []*Room
+}
 
-
+type Ant struct {
+	Pos    int
+	Number int
+	Path   []*Room
 }
 
 func (r *Room) PrintRooms() string {
 	return fmt.Sprintf("%s (%d,%d) [%s]", r.Name, r.X, r.Y, r.Role)
 }
+
 func (r *Room) PrintRelations() string {
 	var out string
 	for _, rel := range r.Relations {
