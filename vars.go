@@ -11,9 +11,7 @@ type Room struct {
 	Role      string // "start", "end", "normal"
 	Relations []*Room
 
-	IsVisited bool
-	Steps     int
-	Parent    []*Room
+
 }
 
 func (r *Room) PrintRooms() string {

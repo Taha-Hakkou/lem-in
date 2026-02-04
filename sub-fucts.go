@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"strings"
 )
 
 func checkRepRooms(sl []Room, s string) bool {
@@ -40,12 +39,6 @@ func PrintParsedData(lines []string) {
 	}
 
 	GetRelatedRooms(Rooms, Links)
-	pathFound := FindPath(Rooms)
-
-	if !pathFound {
-		fmt.Println("ERROR: no path found")
-		return
-	}
 
 	fmt.Println("Number of Ants:", Ants)
 	fmt.Println()
@@ -59,23 +52,13 @@ func PrintParsedData(lines []string) {
 		fmt.Println(l.PrintLinks())
 	}
 	fmt.Println()
-
-	// Afficher les informations de chaque salle
 	for _, r := range Rooms {
-		parentNames := "nil"
-		if len(r.Parent) > 0 {
-			names := []string{}
-			for _, p := range r.Parent {
-				names = append(names, p.Name)
-			}
-			parentNames = strings.Join(names, ", ")
-		}
-		fmt.Printf("Room %s -> parents: [%s] -> steps: %d\n", r.Name, parentNames, r.Steps)
+		fmt.Println(r.Name + "->" + r.PrintRelations())
 	}
 	fmt.Println()
 
 	// Extraire et afficher tous les chemins
-	allPaths := ExtractAllPaths(Rooms)
+	allPaths := FindAllPaths(Rooms)
 	if allPaths == nil {
 		fmt.Println("ERROR: no path found")
 		return
