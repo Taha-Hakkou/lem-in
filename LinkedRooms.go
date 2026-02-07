@@ -64,45 +64,88 @@ func FindAllPaths(Rooms []*Room) [][]*Room {
 	return paths
 }
 
-func MoveAnts(Paths [][]*Room, NAnts int) {
-	for i := 0; i < len(Paths)-1; i++ {
-		for j := 0; j < len(Paths)-i-1; j++ {
-			if len(Paths[j]) > len(Paths[j+1]) {
-				Paths[j], Paths[j+1] = Paths[j+1], Paths[j]
+func MoveAnts(paths [][]*Room, nAnts int) {
+	if len(paths) == 0 || nAnts == 0 {
+		return
+	}
+
+	// sort by length
+	for i := 0; i < len(paths)-1; i++ {
+		for j := 0; j < len(paths)-i-1; j++ {
+			if len(paths[j]) > len(paths[j+1]) {
+				paths[j], paths[j+1] = paths[j+1], paths[j]
 			}
 		}
 	}
 
-	var Ants []Ant
-	j := 0
-	for i := 0; i < NAnts; i++ {
-		if j == len(Paths) {
-			j = 0
-		}
-		a := Ant{Number: i, Pos: 0, Path: Paths[j]}
-		Ants = append(Ants, a)
-		j++
-	}
-	finished := 0
+	// build best disjoint set
+	var best [][]*Room
+	bestTime := -1
 
-	for finished < NAnts {
+	for i := range paths {
+		set := [][]*Room{paths[i]}
+		for j := range paths {
+			if i != j && disjoint(set, paths[j]) {
+				set = append(set, paths[j])
+			}
+		}
+
+		dist := distribute(set, nAnts)
+		t := maxTime(set, dist)
+
+		if bestTime == -1 || t < bestTime {
+			bestTime = t
+			best = set
+		}
+	}
+
+	if len(best) == 0 {
+		return
+	}
+
+	// distribute ants SAFELY
+	dist := distribute(best, nAnts)
+
+	var ants []Ant
+	id := 1
+	for i := 0; i < len(best); i++ {
+		for c := 0; c < dist[i]; c++ {
+			ants = append(ants, Ant{
+				Number: id,
+				Pos:    0,
+				Path:   best[i],
+			})
+			id++
+		}
+	}
+
+	// simulate
+	finished := 0
+	for finished < nAnts {
+		used := make(map[string]bool)
 		var line []string
 
-		for i := range Ants {
-			ant := &Ants[i]
+		for i := range ants {
+			a := &ants[i]
 
-			if ant.Pos >= len(ant.Path)-1 {
+			if a.Pos == len(a.Path)-1 {
 				continue
 			}
 
-			nextRoom := ant.Path[ant.Pos+1]
+			next := a.Path[a.Pos+1]
+			if next.Role != "end" && used[next.Name] {
+				continue
+			}
 
-			ant.Pos++
+			a.Pos++
 			line = append(line,
-				fmt.Sprintf("L%d-%s", ant.Number, nextRoom.Name),
-			)
+				fmt.Sprintf("L%d-%s", a.Number, next.Name))
 
-			if nextRoom.Role == "end" {
+			if next.Role != "end" {
+				used[next.Name] = true
+			}
+
+			if a.Pos == len(a.Path)-1 {
 				finished++
 			}
 		}
@@ -111,4 +154,46 @@ func MoveAnts(Paths [][]*Room, NAnts int) {
 			fmt.Println(strings.Join(line, " "))
 		}
 	}
+}
+
+
+func disjoint(set [][]*Room, p []*Room) bool {
+	for _, s := range set {
+		for i := 1; i < len(s)-1; i++ {
+			for j := 1; j < len(p)-1; j++ {
+				if s[i].Name == p[j].Name {
+					return false
+				}
+			}
+		}
+	}
+	return true
+}
+
+func distribute(paths [][]*Room, ants int) []int {
+	d := make([]int, len(paths))
+	for ants > 0 {
+		best := 0
+		for i := range paths {
+			if len(paths[i])+d[i] < len(paths[best])+d[best] {
+				best = i
+			}
+		}
+		d[best]++
+		ants--
+	}
+	return d
+}
+
+func maxTime(paths [][]*Room, d []int) int {
+	m := 0
+	for i := range paths {
+		if d[i] > 0 {
+			t := len(paths[i]) - 1 + d[i] - 1
+			if t > m {
+				m = t
+			}
+		}
+	}
+	return m
 }

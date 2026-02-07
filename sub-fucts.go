@@ -43,37 +43,13 @@ func PrintParsedData(lines []string) {
 	fmt.Println("Number of Ants:", Ants)
 	fmt.Println()
 
-	for _, r := range Rooms {
-		fmt.Println(r.PrintRooms())
-	}
-	fmt.Println()
-
-	for _, l := range Links {
-		fmt.Println(l.PrintLinks())
-	}
-	fmt.Println()
-	for _, r := range Rooms {
-		fmt.Println(r.Name + "->" + r.PrintRelations())
-	}
-	fmt.Println()
-
 	// Extraire et afficher tous les chemins
 	allPaths := FindAllPaths(Rooms)
 	if allPaths == nil {
 		fmt.Println("ERROR: no path found")
 		return
 	}
+	
 
-	fmt.Printf("Found %d path(s):\n", len(allPaths))
-	for i, path := range allPaths {
-		fmt.Printf("Path %d: ", i+1)
-		for j, room := range path {
-			fmt.Print(room.Name)
-			if j < len(path)-1 {
-				fmt.Print(" -> ")
-			}
-		}
-		fmt.Printf(" (length: %d)\n", len(path)-1)
-	}
-	MoveAnts(allPaths ,Ants)
+	MoveAnts(allPaths, Ants)
 }
