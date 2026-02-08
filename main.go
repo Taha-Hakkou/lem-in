@@ -1,10 +1,6 @@
 package main
 
-import (
-	"fmt"
-	"os"
-	"strings"
-)
+import "os"
 
 // quickest path: means quickest by rounds, number of tunels traversedm OR time ?!
 // => as few moves as possible.
@@ -28,17 +24,5 @@ import (
 // The coordinates of the rooms will always be int.
 
 func main() {
-	if len(os.Args) != 2 || len(os.Args[1]) <= 4 || !strings.HasSuffix(os.Args[1], ".txt") {
-		fmt.Println("Usage: ./lem-in [FILE]")
-		return
-	}
-	bytes, err := os.ReadFile(os.Args[1])
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	bytes = []byte(strings.ReplaceAll(string(bytes), "\r\n", "\n"))
-	lines := strings.Split(string(bytes), "\n")
-	PrintParsedData(lines)
-
+	Print(os.Args)
 }

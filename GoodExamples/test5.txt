@@ -1,17 +1,11 @@
-9
+20
 ##start
-richard 0 6
-gilfoyle 6 3
-erlich 9 6
-dinish 6 9
-jimYoung 11 7
+0 2 0
+1 4 1
+2 6 0
 ##end
-peter 14 6
-richard-dinish
-dinish-jimYoung
-richard-gilfoyle
-gilfoyle-peter
-gilfoyle-erlich
-richard-erlich
-erlich-jimYoung  
-jimYoung-peter
+3 5 3
+0-1
+0-3
+1-2
+3-2
