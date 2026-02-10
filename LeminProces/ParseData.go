@@ -10,134 +10,109 @@ func Parse(lines []string) (int, []*Room, []Link, error) {
 	if len(lines) == 0 {
 		return 0, nil, nil, fmt.Errorf("ERROR: invalid data format")
 	}
-	Ants, err := strconv.Atoi(lines[0])
-	if err != nil || Ants < 1 {
-		return 0, nil, nil, fmt.Errorf("ERROR: invalid number of Ants")
-	}
-	var rooms []string
-	var links []string
-	var startCount int
-	var endCount int
-	lines = lines[1:]
-	lines = Clear(lines)
-	for i, line := range lines {
-		Templine := strings.Fields(line)
 
+	ants, err := strconv.Atoi(lines[0])
+	if err != nil || ants < 1 {
+		return 0, nil, nil, fmt.Errorf("ERROR: invalid number of ants")
+	}
+
+	lines = Clear(lines[1:])
+
+	var roomsDef []string
+	var linksDef []string
+	startCount, endCount := 0, 0
+
+	for i, line := range lines {
 		if line == "##start" {
 			startCount++
 		}
 		if line == "##end" {
 			endCount++
 		}
-		if len(Templine) > 3 || len(Templine) < 1 {
-			return 0, nil, nil, fmt.Errorf("ERROR: invalid data format")
-		}
-		if len(Templine) == 1 && !strings.Contains(line, "-") && !strings.HasPrefix(line, "#") {
-			return 0, nil, nil, fmt.Errorf("ERROR: invalid data format")
-		}
-		if strings.Contains(line, "-") {
-			index := i
-			rooms = lines[:index]
-			links = lines[index:]
+
+		if strings.Contains(line, "-") && !strings.HasPrefix(line, "#") {
+			roomsDef = lines[:i]
+			linksDef = lines[i:]
 			break
 		}
 	}
+
 	if startCount != 1 || endCount != 1 {
 		return 0, nil, nil, fmt.Errorf("ERROR: invalid data format")
 	}
 
-	var Rooms []Room
-	for i := 0; i < len(rooms); i++ {
-		r := rooms[i]
-		fields := strings.Fields(r)
+	var rooms []Room
 
-		// Skip comments (but not ##start and ##end)
-		if len(fields) == 1 && strings.HasPrefix(r, "#") && r != "##start" && r != "##end" {
+	for i := 0; i < len(roomsDef); i++ {
+		line := roomsDef[i]
+		if strings.HasPrefix(line, "#") && line != "##start" && line != "##end" {
 			continue
 		}
-		if len(fields) == 3 && strings.HasPrefix(fields[0], "#") || strings.HasPrefix(fields[0], "L") {
-			return 0, nil, nil, fmt.Errorf("ERROR: invalid data format")
-		}
 
-		if r == "##start" || r == "##end" {
-			if i+1 >= len(rooms) {
-				return 0, nil, nil, fmt.Errorf("ERROR: invalid data format")
-			}
-			next := strings.Fields(rooms[i+1])
-			if len(next) != 3 {
-				return 0, nil, nil, fmt.Errorf("ERROR: invalid data format")
-			}
-			x, err := strconv.Atoi(next[1])
-			if err != nil {
-				return 0, nil, nil, fmt.Errorf("ERROR: invalid data format")
-			}
-			y, err := strconv.Atoi(next[2])
-			if err != nil {
-				return 0, nil, nil, fmt.Errorf("ERROR: invalid data format")
-			}
-			role := ""
-			if r == "##start" {
-				role = "start"
-			}
-			if r == "##end" {
+		if line == "##start" || line == "##end" {
+			role := "start"
+			if line == "##end" {
 				role = "end"
 			}
+			i++
+			fields := strings.Fields(roomsDef[i])
+			x, _ := strconv.Atoi(fields[1])
+			y, _ := strconv.Atoi(fields[2])
 
-			newRoom := Room{Name: next[0], X: x, Y: y, Role: role}
-			if !checkRepRooms(Rooms, next[0]) {
+			if !checkRepRooms(rooms, fields[0]) {
 				return 0, nil, nil, fmt.Errorf("ERROR: duplicate room")
 			}
-			Rooms = append(Rooms, newRoom)
-			i++ // skip the room line after ##start/##end
+
+			rooms = append(rooms, Room{
+				Name: fields[0],
+				X:    x,
+				Y:    y,
+				Role: role,
+			})
 			continue
 		}
 
-		// Handle normal rooms (NOT preceded by ##start or ##end)
-		if len(fields) == 3 {
-			x, err := strconv.Atoi(fields[1])
-			if err != nil {
-				return 0, nil, nil, fmt.Errorf("ERROR: invalid data format")
-			}
-			y, err := strconv.Atoi(fields[2])
-			if err != nil {
-				return 0, nil, nil, fmt.Errorf("ERROR: invalid data format")
-			}
-			newRoom := Room{Name: fields[0], X: x, Y: y, Role: "normal"}
-			if !checkRepRooms(Rooms, fields[0]) {
-				return 0, nil, nil, fmt.Errorf("ERROR: duplicate room")
-			}
-			Rooms = append(Rooms, newRoom)
+		fields := strings.Fields(line)
+		x, _ := strconv.Atoi(fields[1])
+		y, _ := strconv.Atoi(fields[2])
+
+		if !checkRepRooms(rooms, fields[0]) {
+			return 0, nil, nil, fmt.Errorf("ERROR: duplicate room")
 		}
+
+		rooms = append(rooms, Room{
+			Name: fields[0],
+			X:    x,
+			Y:    y,
+			Role: "normal",
+		})
 	}
-	var Checking []string
-	for _, link := range links {
-		link = strings.TrimSpace(link)
-		tempLink := strings.Split(link, "-")
-		if strings.HasPrefix(link, "#") && link != "##start" && link != "##end" {
+
+	var roomPtrs []*Room
+	for i := range rooms {
+		roomPtrs = append(roomPtrs, &rooms[i])
+	}
+
+	var links []Link
+	var seen []string
+
+	for _, l := range linksDef {
+		if strings.HasPrefix(l, "#") {
 			continue
 		}
-		if len(tempLink) != 2 {
-			return 0, nil, nil, fmt.Errorf("ERROR: invalid data format")
+		if !checkRepLinks(seen, l) {
+			return 0, nil, nil, fmt.Errorf("ERROR: duplicate link")
 		}
-		if checkRepRooms(Rooms, tempLink[0]) || checkRepRooms(Rooms, tempLink[1]) || tempLink[0] == tempLink[1] {
-			return 0, nil, nil, fmt.Errorf("ERROR: invalid data format")
-		}
-		if checkRepLinks(Checking, link) {
-			Checking = append(Checking, link)
-		} else {
-			return 0, nil, nil, fmt.Errorf("ERROR: invalid data format")
-		}
+		seen = append(seen, l)
 
-	}
-	var parsedRooms []*Room
-	for i := range Rooms {
-		parsedRooms = append(parsedRooms, &Rooms[i])
-	}
-	var Links []Link
-	for _, l := range Checking {
-		splited := strings.Split(l, "-")
-		Links = append(Links, Link{R1: FindRoom(parsedRooms, splited[0]), R2: FindRoom(parsedRooms, splited[1])})
+		s := strings.Split(l, "-")
+		r1 := FindRoom(roomPtrs, s[0])
+		r2 := FindRoom(roomPtrs, s[1])
+		if r1 == nil || r2 == nil {
+			return 0, nil, nil, fmt.Errorf("ERROR: invalid link")
+		}
+		links = append(links, Link{r1, r2})
 	}
 
-	return Ants, parsedRooms, Links, nil
+	return ants, roomPtrs, links, nil
 }

@@ -2,19 +2,18 @@ package lemin
 
 type Room struct {
 	Name      string
-	X         int
-	Y         int
+	X, Y      int
 	Role      string // "start", "end", "normal"
 	Relations []*Room
-}
-
-type Ant struct {
-	Pos    int
-	Number int
-	Path   []*Room
 }
 
 type Link struct {
 	R1 *Room
 	R2 *Room
+}
+
+type Ant struct {
+	Number int
+	Pos    int
+	Path   []*Room
 }

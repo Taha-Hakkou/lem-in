@@ -25,14 +25,16 @@ func Print(Args []string) {
 		fmt.Println(err)
 		return
 	}
+
 	lemin.GetRelatedRooms(Rooms, Links)
 
-	allPaths := lemin.FindAllPaths(Rooms)
-	if allPaths == nil {
+	// Use intelligent path finding
+	paths := lemin.PathFinder(Rooms, Links)
+
+	if len(paths) == 0 {
 		fmt.Println("ERROR: no path found")
 		return
 	}
-
-	lemin.MoveAnts(allPaths, Ants)
+	// Move ants
+	lemin.MoveAnts(paths, Ants)
 }
-
