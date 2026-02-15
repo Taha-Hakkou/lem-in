@@ -20,7 +20,7 @@ func Print(Args []string) {
 	}
 	bytes = []byte(strings.ReplaceAll(string(bytes), "\r\n", "\n"))
 	lines := strings.Split(string(bytes), "\n")
-	Ants, Rooms, Links, err := lemin.Parse(lines)
+	Ants, Rooms, Links, err := lemin.Parse(lemin.Clear(lines))
 	if err != nil {
 		fmt.Println(err)
 		return

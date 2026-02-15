@@ -6,10 +6,16 @@ import (
 )
 
 func PathFinder(rooms []*Room, links []Link) [][]*Room {
-	avg := float64(len(links)*2) / float64(len(rooms))
-	if avg < 2.5 {
+	ratio := float64(len(links)) / float64(len(rooms))
+
+	// Si peu de liens par rapport aux salles → DFS
+	// Si beaucoup de liens → BFS
+	if ratio < 1.5 {
+		fmt.Println("DFS")
 		return FindAllPathsDFS(rooms)
 	}
+	
+	fmt.Println("BFS")
 	return FindDisjointPathsBFS(rooms)
 }
 
@@ -60,8 +66,7 @@ func FindDisjointPathsBFS(rooms []*Room) [][]*Room {
 	for _, r := range rooms {
 		if r.Role == "start" {
 			start = r
-		}
-		if r.Role == "end" {
+		} else if r.Role == "end" {
 			end = r
 		}
 	}
@@ -69,58 +74,72 @@ func FindDisjointPathsBFS(rooms []*Room) [][]*Room {
 		return nil
 	}
 
-	var all [][]*Room
+	var allPaths [][]*Room
 	used := map[*Room]bool{}
 
 	for {
-		p := bfsFindPath(start, end, used)
-		if p == nil {
+		queue := [][]*Room{{start}}
+		visited := map[*Room]bool{start: true}
+		var foundPath []*Room
+
+		for len(queue) > 0 && foundPath == nil {
+			path := queue[0]
+			queue = queue[1:]
+			cur := path[len(path)-1]
+
+			if cur == end {
+				foundPath = path
+				break
+			}
+
+			for _, next := range cur.Relations {
+				if visited[next] || (used[next] && next != end) {
+					continue
+				}
+				visited[next] = true
+				newPath := append([]*Room{}, path...)
+				newPath = append(newPath, next)
+				queue = append(queue, newPath)
+			}
+		}
+
+		if foundPath == nil {
 			break
 		}
-		all = append(all, p)
-		for i := 1; i < len(p)-1; i++ {
-			used[p[i]] = true
+
+		allPaths = append(allPaths, foundPath)
+		for i := 1; i < len(foundPath)-1; i++ {
+			used[foundPath[i]] = true
 		}
 	}
 
-	return all
+	return allPaths
 }
-
-func bfsFindPath(start, end *Room, used map[*Room]bool) []*Room {
-	queue := [][]*Room{{start}}
-	visited := map[*Room]bool{start: true}
-
-	for len(queue) > 0 {
-		p := queue[0]
-		queue = queue[1:]
-		cur := p[len(p)-1]
-
-		if cur == end {
-			return p
-		}
-
-		for _, n := range cur.Relations {
-			if visited[n] || (used[n] && n != end) {
-				continue
-			}
-			visited[n] = true
-			np := append(append([]*Room{}, p...), n)
-			queue = append(queue, np)
-		}
-	}
-
-	return nil
-}
-
 func MoveAnts(paths [][]*Room, ants int) {
 	if len(paths) == 0 || ants == 0 {
 		return
 	}
 
-	sortPaths(paths)
-	best := selectBest(paths, ants)
-	if len(best) == 0 {
-		return
+	for i := 0; i < len(paths)-1; i++ {
+		for j := 0; j < len(paths)-i-1; j++ {
+			if len(paths[j]) > len(paths[j+1]) {
+				paths[j], paths[j+1] = paths[j+1], paths[j]
+			}
+		}
+	}
+
+	var best [][]*Room
+	for i := range paths {
+		set := [][]*Room{paths[i]}
+		for j := range paths {
+			if i != j && disjoint(set, paths[j]) {
+				set = append(set, paths[j])
+			}
+		}
+
+		if len(set) > len(best) {
+			best = set
+		}
 	}
 
 	dist := distribute(best, ants)
@@ -141,6 +160,7 @@ func MoveAnts(paths [][]*Room, ants int) {
 
 		for i := range list {
 			a := &list[i]
+
 			if a.Pos == len(a.Path)-1 {
 				continue
 			}
@@ -152,6 +172,7 @@ func MoveAnts(paths [][]*Room, ants int) {
 
 			a.Pos++
 			moves = append(moves, fmt.Sprintf("L%d-%s", a.Number, n.Name))
+
 			if n.Role != "end" {
 				used[n.Name] = true
 			}
@@ -166,52 +187,6 @@ func MoveAnts(paths [][]*Room, ants int) {
 	}
 }
 
-func sortPaths(paths [][]*Room) {
-	for i := 0; i < len(paths)-1; i++ {
-		for j := 0; j < len(paths)-i-1; j++ {
-			if len(paths[j]) > len(paths[j+1]) {
-				paths[j], paths[j+1] = paths[j+1], paths[j]
-			}
-		}
-	}
-}
-
-func selectBest(paths [][]*Room, ants int) [][]*Room {
-	var best [][]*Room
-	bestTime := -1
-
-	for i := range paths {
-		set := [][]*Room{paths[i]}
-		for j := range paths {
-			if i != j && disjoint(set, paths[j]) {
-				set = append(set, paths[j])
-			}
-		}
-
-		dist := distribute(set, ants)
-		t := calcTime(set, dist)
-
-		if bestTime == -1 || t < bestTime {
-			bestTime = t
-			best = set
-		}
-	}
-
-	return best
-}
-
-func calcTime(paths [][]*Room, dist []int) int {
-	max := 0
-	for i := range paths {
-		if dist[i] > 0 {
-			t := len(paths[i]) - 1 + dist[i] - 1
-			if t > max {
-				max = t
-			}
-		}
-	}
-	return max
-}
 
 func disjoint(set [][]*Room, p []*Room) bool {
 	for _, s := range set {
