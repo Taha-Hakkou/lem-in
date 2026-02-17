@@ -5,177 +5,67 @@ import (
 	"strings"
 )
 
-func PathFinder(rooms []*Room, links []Link) [][]*Room {
-	ratio := float64(len(links)) / float64(len(rooms))
-
-	// Si peu de liens par rapport aux salles → DFS
-	// Si beaucoup de liens → BFS
-	if ratio < 1.5 {
-		
-		return FindAllPathsDFS(rooms)
-	}
-	
-	
-	return FindDisjointPathsBFS(rooms)
-}
-
-func FindAllPathsDFS(rooms []*Room) [][]*Room {
-	var start, end *Room
-	for _, r := range rooms {
-		if r.Role == "start" {
-			start = r
-		}
-		if r.Role == "end" {
-			end = r
-		}
-	}
-	if start == nil || end == nil {
-		return nil
-	}
-
-	var paths [][]*Room
-	var path []*Room
-	visited := map[*Room]bool{}
-
-	var dfs func(*Room)
-	dfs = func(r *Room) {
-		visited[r] = true
-		path = append(path, r)
-
-		if r == end {
-			tmp := append([]*Room{}, path...)
-			paths = append(paths, tmp)
-		} else {
-			for _, n := range r.Relations {
-				if !visited[n] {
-					dfs(n)
-				}
-			}
-		}
-
-		path = path[:len(path)-1]
-		visited[r] = false
-	}
-
-	dfs(start)
-	return paths
-}
-
-func FindDisjointPathsBFS(rooms []*Room) [][]*Room {
-	var start, end *Room
-	for _, r := range rooms {
-		if r.Role == "start" {
-			start = r
-		} else if r.Role == "end" {
-			end = r
-		}
-	}
-	if start == nil || end == nil {
-		return nil
-	}
-
-	var allPaths [][]*Room
-	used := map[*Room]bool{}
-
-	for {
-		queue := [][]*Room{{start}}
-		visited := map[*Room]bool{start: true}
-		var foundPath []*Room
-
-		for len(queue) > 0 && foundPath == nil {
-			path := queue[0]
-			queue = queue[1:]
-			cur := path[len(path)-1]
-
-			if cur == end {
-				foundPath = path
-				break
-			}
-
-			for _, next := range cur.Relations {
-				if visited[next] || (used[next] && next != end) {
-					continue
-				}
-				visited[next] = true
-				newPath := append([]*Room{}, path...)
-				newPath = append(newPath, next)
-				queue = append(queue, newPath)
-			}
-		}
-
-		if foundPath == nil {
-			break
-		}
-
-		allPaths = append(allPaths, foundPath)
-		for i := 1; i < len(foundPath)-1; i++ {
-			used[foundPath[i]] = true
-		}
-	}
-
-	return allPaths
-}
+// MoveAnts simulates ant movement respecting room and tunnel rules
 func MoveAnts(paths [][]*Room, ants int) {
 	if len(paths) == 0 || ants == 0 {
 		return
 	}
 
-	for i := 0; i < len(paths)-1; i++ {
-		for j := 0; j < len(paths)-i-1; j++ {
-			if len(paths[j]) > len(paths[j+1]) {
-				paths[j], paths[j+1] = paths[j+1], paths[j]
-			}
-		}
-	}
+	// Distribute ants across paths
+	dist := distribute(paths, ants)
 
-	var best [][]*Room
-	for i := range paths {
-		set := [][]*Room{paths[i]}
-		for j := range paths {
-			if i != j && disjoint(set, paths[j]) {
-				set = append(set, paths[j])
-			}
-		}
-
-		if len(set) > len(best) {
-			best = set
-		}
-	}
-
-	dist := distribute(best, ants)
-
+	// Create ant list with assigned paths
 	var list []Ant
 	id := 1
-	for i := range best {
+	for i := range paths {
 		for j := 0; j < dist[i]; j++ {
-			list = append(list, Ant{id, 0, best[i]})
+			list = append(list, Ant{
+				Number: id,
+				Pos:    0,
+				Path:   paths[i],
+			})
 			id++
 		}
 	}
 
 	done := 0
+
+	// Simulate turns
 	for done < ants {
-		used := map[string]bool{}
+		usedRooms := map[string]bool{}
+		usedTunnels := map[string]bool{}
 		var moves []string
 
+		// Try to move each ant
 		for i := range list {
 			a := &list[i]
 
+			// Skip ants at end
 			if a.Pos == len(a.Path)-1 {
 				continue
 			}
 
-			n := a.Path[a.Pos+1]
-			if n.Role != "end" && used[n.Name] {
+			current := a.Path[a.Pos]
+			next := a.Path[a.Pos+1]
+			tunnel := current.Name + "-" + next.Name
+
+			// Check tunnel and room availability
+			if usedTunnels[tunnel] {
+				continue
+			}
+			if next.Role != "end" && usedRooms[next.Name] {
 				continue
 			}
 
+			// Move ant
 			a.Pos++
-			moves = append(moves, fmt.Sprintf("L%d-%s", a.Number, n.Name))
+			moves = append(moves, fmt.Sprintf("L%d-%s", a.Number, next.Name))
 
-			if n.Role != "end" {
-				used[n.Name] = true
+			usedTunnels[tunnel] = true
+			if next.Role != "end" {
+				usedRooms[next.Name] = true
 			}
+
 			if a.Pos == len(a.Path)-1 {
 				done++
 			}
@@ -187,7 +77,7 @@ func MoveAnts(paths [][]*Room, ants int) {
 	}
 }
 
-
+// disjoint checks if path shares intermediate nodes with set
 func disjoint(set [][]*Room, p []*Room) bool {
 	for _, s := range set {
 		for i := 1; i < len(s)-1; i++ {
@@ -201,8 +91,11 @@ func disjoint(set [][]*Room, p []*Room) bool {
 	return true
 }
 
+// distribute assigns ants to minimize completion time
 func distribute(paths [][]*Room, ants int) []int {
 	d := make([]int, len(paths))
+
+	// Greedy: assign to path with minimum (length + assigned)
 	for ants > 0 {
 		best := 0
 		for i := 1; i < len(paths); i++ {
