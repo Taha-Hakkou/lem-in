@@ -11,7 +11,16 @@ func checkRepRooms(sl []Room, s string) bool {
 
 func checkRepLinks(sl [][]string, s []string) bool {
 	for _, r := range sl {
-		if (r[0] == s[0] && r[1] == s[1] )||(r[0] == s[1] && r[1] == s[0] ) {
+		if (r[0] == s[0] && r[1] == s[1]) || (r[0] == s[1] && r[1] == s[0]) {
+			return false
+		}
+	}
+	return true
+}
+
+func checkRepCoor(sl [][]string, s []string) bool {
+	for _, r := range sl {
+		if r[0] == s[0] && r[1] == s[1] {
 			return false
 		}
 	}

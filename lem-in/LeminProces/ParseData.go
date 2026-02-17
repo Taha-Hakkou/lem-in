@@ -35,6 +35,7 @@ func Parse(lines []string) (int, []*Room, []Link, error) {
 	lines = lines[indexAnts+1:] // FIX: Skip the ants line
 
 	for i, line := range lines {
+		line = strings.TrimSpace(line)
 		Templine := strings.Fields(line)
 		if line == "##start" {
 			startCount++
@@ -64,6 +65,7 @@ func Parse(lines []string) (int, []*Room, []Link, error) {
 	}
 
 	var Rooms []Room
+	var CheckingCordin [][]string
 	for i := 0; i < len(rooms); i++ {
 		r := rooms[i]
 		fields := strings.Fields(r)
@@ -100,6 +102,9 @@ func Parse(lines []string) (int, []*Room, []Link, error) {
 			if err != nil {
 				return 0, nil, nil, fmt.Errorf("ERROR: invalid data format, invalid coordinates")
 			}
+			if x < 0 || y < 0 {
+				return 0, nil, nil, fmt.Errorf("ERROR: invalid data format, negative coordinates")
+			}
 
 			role := ""
 			if r == "##start" {
@@ -120,6 +125,12 @@ func Parse(lines []string) (int, []*Room, []Link, error) {
 
 		// Handle normal rooms (NOT preceded by ##start or ##end)
 		if len(fields) == 3 {
+			tempLink := append([]string{}, fields[1], fields[2])
+			if checkRepCoor(CheckingCordin, tempLink) {
+				CheckingCordin = append(CheckingCordin, tempLink)
+			} else {
+				return 0, nil, nil, fmt.Errorf("ERROR: invalid data format, duplicate coordinate")
+			}
 			x, err := strconv.Atoi(fields[1])
 			if err != nil {
 				return 0, nil, nil, fmt.Errorf("ERROR: invalid data format, invalid coordinates")
@@ -127,6 +138,9 @@ func Parse(lines []string) (int, []*Room, []Link, error) {
 			y, err := strconv.Atoi(fields[2])
 			if err != nil {
 				return 0, nil, nil, fmt.Errorf("ERROR: invalid data format, invalid coordinates")
+			}
+			if x < 0 || y < 0 {
+				return 0, nil, nil, fmt.Errorf("ERROR: invalid data format, negative coordinates")
 			}
 			newRoom := Room{Name: fields[0], X: x, Y: y, Role: "normal"}
 			if !checkRepRooms(Rooms, fields[0]) {

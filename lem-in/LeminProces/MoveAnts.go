@@ -11,11 +11,11 @@ func PathFinder(rooms []*Room, links []Link) [][]*Room {
 	// Si peu de liens par rapport aux salles → DFS
 	// Si beaucoup de liens → BFS
 	if ratio < 1.5 {
-		fmt.Println("DFS")
+		
 		return FindAllPathsDFS(rooms)
 	}
 	
-	fmt.Println("BFS")
+	
 	return FindDisjointPathsBFS(rooms)
 }
 
