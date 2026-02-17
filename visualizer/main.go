@@ -10,7 +10,6 @@ import (
 // TODO:
 // 	- move directions
 //  - handling errors from lem-in
-//  - example 2 & 3 not working properly !
 
 func main() {
 	// check whether stdin is coming from a pipe/file or from a terminal (TTY)
@@ -24,11 +23,16 @@ func main() {
 
 	bytes, err := io.ReadAll(os.Stdin)
 	if err != nil {
-		panic(err) // why panic ?
+		panic(err)
 	}
 	lines := strings.Split(string(bytes), "\n")
 
 	// need to check global error of lem-in
+	if strings.HasPrefix(lines[0], "ERROR:") {
+		fmt.Println("* lem-in error occured")
+		fmt.Println(lines[0])
+		return
+	}
 
 	parseData(lines)
 
@@ -50,14 +54,14 @@ func main() {
 	pos := make(map[string]Room)
 	for id, p := range rooms {
 		gx := (p.x - minX) * scale
-		gy := (p.y - minY) * scale // to invert Y, use (maxY - p.y) instead
-		pos[id] = Room{gx, gy}     // is id converted implicitly ???
+		gy := (p.y - minY) * scale
+		pos[id] = Room{gx, gy}
 	}
-	// fmt.Println(pos)
 
 	// ---------- CANVAS ----------
 	for id, p := range pos {
-		var w int = p.x + 2 + len(id) // 2 = opening & closing brackets
+		var w int = p.x + 2 + len(id)
+		// 2 = opening & closing brackets
 		if w > width {
 			width = w
 		}
@@ -65,7 +69,6 @@ func main() {
 			height = p.y + 1
 		}
 	}
-	// fmt.Println(height, width)
 
 	canvas := make([][]rune, height)
 	for i := range canvas {
@@ -74,8 +77,6 @@ func main() {
 			canvas[i][j] = ' '
 		}
 	}
-	// can i populate them in single line
-	// + add space between lines so that slaches andd backslaches align properly !
 
 	// ---------- DRAW ROOMS ----------
 	for id, p := range pos {

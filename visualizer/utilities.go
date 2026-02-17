@@ -31,7 +31,7 @@ func worker(canvas [][]rune, move [2]string, wg *sync.WaitGroup) {
 	drawLine(canvas, x1, y1, x2, y2)
 }
 
-func Animate(canvas [][]rune) { // steps is global, make canvas global also !
+func Animate(canvas [][]rune) {
 	for _, step := range steps {
 		var wg sync.WaitGroup
 		for _, move := range step {
@@ -59,12 +59,6 @@ func reset() {
 	fmt.Printf("\033[%dA", height)
 }
 
-// \r        → start of line
-// \033[1A   → up 1 line
-// \033[1B   → down 1 line
-// \033[2K   → clear whole line
-// \033[K    → clear from cursor right
-
 var changingCells = []string{}
 
 func deplace(canvas [][]rune, x, y int) {
@@ -80,3 +74,9 @@ func deplace(canvas [][]rune, x, y int) {
 	time.Sleep(SLEEP)
 	canvas[y][x] = tmp
 }
+
+// \r        → start of line
+// \033[1A   → up 1 line
+// \033[1B   → down 1 line
+// \033[2K   → clear whole line
+// \033[K    → clear from cursor right

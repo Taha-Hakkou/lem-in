@@ -25,7 +25,6 @@ var (
 	scale         = 4
 )
 
-// do not start from big numbers !!!!!!!!!!!!!!! (do i even need them)
 var (
 	minX, maxX = math.MaxInt, math.MinInt
 	minY, maxY = math.MaxInt, math.MinInt

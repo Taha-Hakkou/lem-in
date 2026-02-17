@@ -14,7 +14,7 @@ func parseData(lines []string) {
 
 	var i int
 
-	// recheck regex: surrounding spaces
+	// Room parsing
 	roomex := regexp.MustCompile(`^([A-Za-z0-9]+) ([0-9]+) ([0-9]+)$`)
 	for i = 1; i < len(lines); i++ {
 		if roomex.MatchString(lines[i]) { // contains and not match: resolved
@@ -34,8 +34,7 @@ func parseData(lines []string) {
 		}
 	}
 
-	// 	fmt.Println()
-
+	// Tunel parsing
 	tunlex := regexp.MustCompile(`^([A-Za-z0-9]+)-([A-Za-z0-9]+)$`)
 	for ; i < len(lines); i++ {
 		if tunlex.MatchString(lines[i]) { // contains and not match: resolved
@@ -47,6 +46,7 @@ func parseData(lines []string) {
 		}
 	}
 
+	// Link parsing
 	i++ // skip empty line
 	stepx := regexp.MustCompile(`L([A-Za-z0-9]+)-([A-Za-z0-9]+)`)
 	for ; i < len(lines); i++ {
@@ -57,6 +57,5 @@ func parseData(lines []string) {
 			newMoves[j] = [2]string{move[1], move[2]}
 		}
 		steps = append(steps, newMoves)
-		// fmt.Println(newMoves)
 	}
 }
