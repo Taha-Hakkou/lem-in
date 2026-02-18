@@ -5,24 +5,46 @@ import (
 	"strings"
 )
 
-// MoveAnts simulates ant movement respecting room and tunnel rules
 func MoveAnts(paths [][]*Room, ants int) {
 	if len(paths) == 0 || ants == 0 {
 		return
 	}
 
-	// Distribute ants across paths
-	dist := distribute(paths, ants)
+	// Manual sort (shortest first)
+	for i := 0; i < len(paths)-1; i++ {
+		for j := 0; j < len(paths)-i-1; j++ {
+			if len(paths[j]) > len(paths[j+1]) {
+				paths[j], paths[j+1] = paths[j+1], paths[j]
+			}
+		}
+	}
 
-	// Create ant list with assigned paths
+	// Build best disjoint set (max number of paths)
+	var best [][]*Room
+	for i := range paths {
+		set := [][]*Room{paths[i]}
+		for j := range paths {
+			if i != j && disjoint(set, paths[j]) {
+				set = append(set, paths[j])
+			}
+		}
+		if len(set) > len(best) {
+			best = set
+		}
+	}
+
+	// Distribute ants
+	dist := distribute(best, ants)
+
+	// Create ants
 	var list []Ant
 	id := 1
-	for i := range paths {
+	for i := range best {
 		for j := 0; j < dist[i]; j++ {
 			list = append(list, Ant{
 				Number: id,
 				Pos:    0,
-				Path:   paths[i],
+				Path:   best[i],
 			})
 			id++
 		}
@@ -30,17 +52,14 @@ func MoveAnts(paths [][]*Room, ants int) {
 
 	done := 0
 
-	// Simulate turns
 	for done < ants {
 		usedRooms := map[string]bool{}
 		usedTunnels := map[string]bool{}
 		var moves []string
 
-		// Try to move each ant
 		for i := range list {
 			a := &list[i]
 
-			// Skip ants at end
 			if a.Pos == len(a.Path)-1 {
 				continue
 			}
@@ -49,15 +68,14 @@ func MoveAnts(paths [][]*Room, ants int) {
 			next := a.Path[a.Pos+1]
 			tunnel := current.Name + "-" + next.Name
 
-			// Check tunnel and room availability
 			if usedTunnels[tunnel] {
 				continue
 			}
+
 			if next.Role != "end" && usedRooms[next.Name] {
 				continue
 			}
 
-			// Move ant
 			a.Pos++
 			moves = append(moves, fmt.Sprintf("L%d-%s", a.Number, next.Name))
 
@@ -77,7 +95,6 @@ func MoveAnts(paths [][]*Room, ants int) {
 	}
 }
 
-// disjoint checks if path shares intermediate nodes with set
 func disjoint(set [][]*Room, p []*Room) bool {
 	for _, s := range set {
 		for i := 1; i < len(s)-1; i++ {
@@ -91,11 +108,9 @@ func disjoint(set [][]*Room, p []*Room) bool {
 	return true
 }
 
-// distribute assigns ants to minimize completion time
 func distribute(paths [][]*Room, ants int) []int {
 	d := make([]int, len(paths))
 
-	// Greedy: assign to path with minimum (length + assigned)
 	for ants > 0 {
 		best := 0
 		for i := 1; i < len(paths); i++ {
@@ -106,5 +121,6 @@ func distribute(paths [][]*Room, ants int) []int {
 		d[best]++
 		ants--
 	}
+
 	return d
 }
